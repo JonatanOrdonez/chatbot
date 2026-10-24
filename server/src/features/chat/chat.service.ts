@@ -1,6 +1,7 @@
 import Boom from '@hapi/boom';
+import { ChatCompletionMessageParam } from 'groq-sdk/resources/chat/completions';
 import { groq } from '../../config/groq';
-import { GROQ_MODEL } from '../../config/config';
+import { GROQ_MODEL, GROQ_VISION_MODEL } from '../../config/config';
 import {
   createConversationRepository,
   createPromptRepository,
@@ -28,16 +29,26 @@ const buildTitle = (message: string): string => {
   return trimmed.length > TITLE_MAX_LENGTH ? `${trimmed.slice(0, TITLE_MAX_LENGTH)}...` : trimmed;
 };
 
-// The user prompt must already be saved: the model replies to the stored history
-const createAssistantPrompt = async (conversationId: string): Promise<Prompt> => {
-  const history = await getPromptsByConversationIdRepository(conversationId);
+// history is the conversation before userPrompt, which is the message being answered
+// Only userPrompt's image is sent to the model: older images are not resent
+const createAssistantPrompt = async (history: Prompt[], userPrompt: Prompt): Promise<Prompt> => {
+  const userMessage: ChatCompletionMessageParam = userPrompt.imageUrl
+    ? {
+      role: 'user',
+      content: [
+        { type: 'text', text: userPrompt.message },
+        { type: 'image_url', image_url: { url: userPrompt.imageUrl } },
+      ],
+    }
+    : { role: 'user', content: userPrompt.message };
 
   try {
     const completion = await groq.chat.completions.create({
-      model: GROQ_MODEL,
+      model: userPrompt.imageUrl ? GROQ_VISION_MODEL : GROQ_MODEL,
       messages: [
         { role: 'system', content: SYSTEM_PROMPT },
         ...history.map((prompt) => ({ role: prompt.role, content: prompt.message })),
+        userMessage,
       ],
     });
 
@@ -48,7 +59,7 @@ const createAssistantPrompt = async (conversationId: string): Promise<Prompt> =>
     }
 
     return await createPromptRepository({
-      conversationId,
+      conversationId: userPrompt.conversationId,
       role: PromptRole.Assistant,
       message,
     });
@@ -65,13 +76,15 @@ export const createPromptService = async (
 ): Promise<PromptExchange> => {
   await getOwnedConversation(conversationId, userId);
 
+  const history = await getPromptsByConversationIdRepository(conversationId);
+
   const userPrompt = await createPromptRepository({
     conversationId,
     role: PromptRole.User,
     message,
   });
 
-  const assistantPrompt = await createAssistantPrompt(conversationId);
+  const assistantPrompt = await createAssistantPrompt(history, userPrompt);
 
   return { userPrompt, assistantPrompt };
 };

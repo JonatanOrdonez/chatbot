@@ -3,7 +3,7 @@ import { Conversation, CreateConversationDTO, CreatePromptDTO, Prompt } from './
 
 const CONVERSATION_COLUMNS = 'id, user_id AS "userId", title, created_at AS "createdAt"';
 const PROMPT_COLUMNS =
-  'id, conversation_id AS "conversationId", role, message, created_at AS "createdAt"';
+  'id, conversation_id AS "conversationId", role, message, image_url AS "imageUrl", created_at AS "createdAt"';
 
 export const createConversationRepository = async (
   conversation: CreateConversationDTO,
@@ -48,10 +48,10 @@ export const getConversationByIdAndUserRepository = async (
 
 export const createPromptRepository = async (prompt: CreatePromptDTO): Promise<Prompt> => {
   const result = await pool.query<Prompt>(
-    `INSERT INTO public.prompts (conversation_id, role, message)
-     VALUES ($1, $2, $3)
+    `INSERT INTO public.prompts (conversation_id, role, message, image_url)
+     VALUES ($1, $2, $3, $4)
      RETURNING ${PROMPT_COLUMNS}`,
-    [prompt.conversationId, prompt.role, prompt.message],
+    [prompt.conversationId, prompt.role, prompt.message, prompt.imageUrl ?? null],
   );
 
   return result.rows[0];

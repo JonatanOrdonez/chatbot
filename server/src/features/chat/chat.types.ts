@@ -20,6 +20,7 @@ export interface Prompt {
   conversationId: string;
   role: PromptRole;
   message: string;
+  imageUrl: string | null;
   createdAt: Date;
 }
 
@@ -27,6 +28,7 @@ export interface CreatePromptDTO {
   conversationId: string;
   role: PromptRole;
   message: string;
+  imageUrl?: string;
 }
 
 export interface PromptExchange {

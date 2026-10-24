@@ -26,6 +26,7 @@ export const initDb = async () => {
       conversation_id UUID NOT NULL REFERENCES public.conversations(id) ON DELETE CASCADE,
       role TEXT NOT NULL,
       message TEXT NOT NULL,
+      image_url TEXT NULL,
       created_at TIMESTAMP NOT NULL DEFAULT now()
     );
   `);

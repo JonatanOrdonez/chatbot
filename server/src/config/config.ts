@@ -16,3 +16,6 @@ export const SUPABASE_SECRET_KEY = process.env.SUPABASE_SECRET_KEY || '';
 
 export const GROQ_API_KEY = process.env.GROQ_API_KEY || '';
 export const GROQ_MODEL = process.env.GROQ_MODEL || 'openai/gpt-oss-20b';
+
+// Used only when the user prompt has an image: GROQ_MODEL is text-only
+export const GROQ_VISION_MODEL = process.env.GROQ_VISION_MODEL || 'qwen/qwen3.8-27b';

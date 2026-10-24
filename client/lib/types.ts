@@ -21,6 +21,7 @@ export interface Prompt {
   conversationId: string;
   role: PromptRole;
   message: string;
+  imageUrl: string | null;
   createdAt: string;
 }
 
