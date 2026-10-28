@@ -1,5 +1,16 @@
 import { Request, Response, NextFunction } from 'express';
 import Boom from '@hapi/boom';
+import { MulterError } from 'multer';
+
+const toBoom = (err: Error): Boom.Boom => {
+  if (err instanceof MulterError) {
+    return err.code === 'LIMIT_FILE_SIZE'
+      ? Boom.entityTooLarge('The file is too large')
+      : Boom.badRequest(err.message);
+  }
+
+  return Boom.boomify(err);
+};
 
 /**
  * Centralized Express Error Handling Middleware
@@ -13,9 +24,9 @@ export const errorHandler = (
   _next: NextFunction,
 ): void => {
   // If the error is not a Boom error, wrap it into a 500 Internal Server Error Boom object
-  const boomError: Boom.Boom = Boom.isBoom(err) 
-    ? err 
-    : Boom.boomify(err);
+  const boomError: Boom.Boom = Boom.isBoom(err)
+    ? err
+    : toBoom(err);
 
   const { statusCode, payload } = boomError.output;
   res.status(statusCode).json({

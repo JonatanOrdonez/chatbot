@@ -5,7 +5,8 @@ import {errorHandler} from './middlewares/errorMiddleware';
 import {initDb} from './db/db';
 import chatRouter from './features/chat/chat.router';
 import authRouter from './features/auth/auth.router';
-import {authMiddleware} from './middlewares/authMiddleware';
+import uploadsRouter from './features/uploads/uploads.router';
+import {initStorage} from './features/uploads/uploads.service';
 
 const app = express();
 app.use(cors());
@@ -19,12 +20,14 @@ apiRouter.get('/', (req, res) => {
 });
 
 apiRouter.use('/auth', authRouter);
-apiRouter.use('/', authMiddleware, chatRouter);
+apiRouter.use('/uploads', uploadsRouter);
+apiRouter.use('/', chatRouter);
 
 app.use(errorHandler);
 
 app.listen(PORT, async () => {
   await initDb();
+  await initStorage();
   console.log(`Server is running on http://localhost:${PORT}`);
 });
 

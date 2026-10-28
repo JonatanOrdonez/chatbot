@@ -12,7 +12,7 @@ interface ChatContextValue {
   isSending: boolean;
   selectConversation: (id: string) => Promise<void>;
   startNewConversation: () => void;
-  sendMessage: (message: string) => Promise<void>;
+  sendMessage: (message: string, imageUrl?: string) => Promise<void>;
 }
 
 const ChatContext = createContext<ChatContextValue | null>(null);
@@ -47,20 +47,20 @@ const ChatState = ({ children }: { children: React.ReactNode }) => {
     setPrompts([]);
   };
 
-  const sendMessage = async (message: string) => {
+  const sendMessage = async (message: string, imageUrl?: string) => {
     setIsSending(true);
 
     try {
       if (activeConversationId) {
         const res = await api.post<PromptExchange>(
           `/conversations/${activeConversationId}/prompts`,
-          { message },
+          { message, imageUrl },
         );
         setPrompts((prev) => [...prev, res.data.userPrompt, res.data.assistantPrompt]);
         return;
       }
 
-      const res = await api.post<CreateConversationResponse>('/conversations', { message });
+      const res = await api.post<CreateConversationResponse>('/conversations', { message, imageUrl });
       setConversations((prev) => [res.data.conversation, ...prev]);
       setActiveConversationId(res.data.conversation.id);
       setPrompts([res.data.userPrompt, res.data.assistantPrompt]);

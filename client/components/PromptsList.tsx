@@ -17,6 +17,10 @@ export const PromptsList = () => {
             prompt.role === 'user' ? 'self-end' : 'self-start'
           }`}
         >
+          {prompt.imageUrl && (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={prompt.imageUrl} alt="Attached" className="mb-2 max-h-64 rounded" />
+          )}
           {prompt.message}
         </div>
       ))}

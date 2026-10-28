@@ -18,9 +18,21 @@ const getMessage = (req: Request): string => {
   return message;
 };
 
+const getImageUrl = (req: Request): string | undefined => {
+  const imageUrl = req.body.imageUrl;
+
+  if (imageUrl === undefined || imageUrl === null) return undefined;
+
+  if (typeof imageUrl !== 'string' || !imageUrl.trim()) {
+    throw Boom.badRequest('imageUrl must be a non-empty string');
+  }
+
+  return imageUrl;
+};
+
 export const createConversationController = async (req: Request, res: Response) => {
   const user = getUserFromRequest(req);
-  const result = await createConversationService(user.id, getMessage(req));
+  const result = await createConversationService(user.id, getMessage(req), getImageUrl(req));
   res.status(201).json(result);
 };
 
@@ -36,6 +48,7 @@ export const createPromptController = async (req: Request, res: Response) => {
     String(req.params.conversationId),
     user.id,
     getMessage(req),
+    getImageUrl(req),
   );
   res.status(201).json(result);
 };

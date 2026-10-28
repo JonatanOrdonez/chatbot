@@ -10,6 +10,7 @@ import {
   getPromptsByConversationIdRepository,
 } from './chat.repository';
 import { Conversation, Prompt, PromptExchange, PromptRole } from './chat.types';
+import { isUserImageUrl } from '../uploads/uploads.service';
 
 const TITLE_MAX_LENGTH = 50;
 const SYSTEM_PROMPT = 'You are a helpful assistant. Answer clearly and concisely.';
@@ -22,6 +23,13 @@ const getOwnedConversation = async (conversationId: string, userId: string) => {
   }
 
   return conversation;
+};
+
+// The URL ends up being fetched by Groq: only accept images this user uploaded to our bucket
+const assertOwnImageUrl = (imageUrl: string | undefined, userId: string) => {
+  if (imageUrl && !isUserImageUrl(imageUrl, userId)) {
+    throw Boom.badRequest('Invalid image URL');
+  }
 };
 
 const buildTitle = (message: string): string => {
@@ -73,8 +81,10 @@ export const createPromptService = async (
   conversationId: string,
   userId: string,
   message: string,
+  imageUrl?: string,
 ): Promise<PromptExchange> => {
   await getOwnedConversation(conversationId, userId);
+  assertOwnImageUrl(imageUrl, userId);
 
   const history = await getPromptsByConversationIdRepository(conversationId);
 
@@ -82,6 +92,7 @@ export const createPromptService = async (
     conversationId,
     role: PromptRole.User,
     message,
+    imageUrl,
   });
 
   const assistantPrompt = await createAssistantPrompt(history, userPrompt);
@@ -89,13 +100,15 @@ export const createPromptService = async (
   return { userPrompt, assistantPrompt };
 };
 
-export const createConversationService = async (userId: string, message: string) => {
+export const createConversationService = async (userId: string, message: string, imageUrl?: string) => {
+  assertOwnImageUrl(imageUrl, userId);
+
   const conversation = await createConversationRepository({
     userId,
     title: buildTitle(message),
   });
 
-  const prompts = await createPromptService(conversation.id, userId, message);
+  const prompts = await createPromptService(conversation.id, userId, message, imageUrl);
 
   return { conversation, ...prompts };
 };
